@@ -5,26 +5,16 @@
 
 ## ファイル一覧
 
+<!-- prettier-ignore -->
 | ファイル | 言語 |
 |-|-|
 | sample.js | JavaScript |
 | sample.ts | TypeScript |
-| sample.css | CSS |
-| sample.scss | SCSS |
 | sample.json | JSON |
-| sample.php | PHP |
-| sample.java | Java |
-| sample.cs | C# |
-| sample.cpp | C++ |
-| sample.c | C |
-| sample.h | C ヘッダー |
-| sample.go | Go |
-| sample.rs | Rust |
 
 ## 使い方
 
-リポジトリルートで:
-
+<!-- prettier-ignore -->
 ```sh
 pnpm build
 
@@ -38,5 +28,5 @@ pnpm play -- --show sample.ts
 pnpm play:ruby
 
 # ruby モード（特定ファイルのみ表示）
-pnpm play:ruby -- --show sample.ts --show sample.php
+pnpm play:ruby -- --show sample.ts
 ```
