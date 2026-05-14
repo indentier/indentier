@@ -47,6 +47,7 @@ export async function loadPlugins(names: string[]): Promise<void> {
       throw new Error(
         `Failed to load indentier plugin "${name}". ` +
           `Make sure it is installed (e.g. pnpm add ${name}).\n${String(err)}`,
+        { cause: err },
       );
     }
     const plugin: IndentierPlugin = (mod.default ?? mod) as IndentierPlugin;
