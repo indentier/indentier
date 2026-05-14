@@ -1,0 +1,96 @@
+{
+  "name": "indentier",
+  "description": "A silly formatter that hides braces, semicolons and commas in the right margin — letting curly-brace languages pretend they're Python or Ruby.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "bin": {
+    "indentier": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "README-ja.md",
+    "CONTRIBUTING.md",
+    "CONTRIBUTING-ja.md",
+    "icon.png",
+    "icon.svg"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "start": "node dist/cli.js",
+    "play": "powershell -File testplay/test.ps1",
+    "play:ruby": "powershell -File testplay/test.ps1 --mode=ruby",
+    "play:default": "powershell -File testplay/test.ps1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "formatter",
+    "indent",
+    "indentation",
+    "joke",
+    "silly",
+    "ruby",
+    "python",
+    "prettier",
+    "code-style"
+  ],
+  "author": "otoneko.",
+  "license": "MIT",
+  "homepage": "https://github.com/indentier/indentier#readme",
+  "bugs": {
+    "url": "https://github.com/indentier/indentier/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/indentier/indentier.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "consola": "^3.4.2",
+    "cosmiconfig": "^9.0.1",
+    "fast-glob": "^3.3.3",
+    "ignore": "^7.0.5",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.7.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "latest",
+    "tsdown": "^0.22.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.20.0",
+    "unrun": "^0.3.0",
+    "vitest": "^4.1.6"
+  }
+}

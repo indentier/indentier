@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (x.y.z or x.y.z-tag, e.g. 1.2.3 or 1.2.3-beta.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Publish to npm and GitHub Releases
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate version input
+        run: |
+          echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.\-]+)?$' || {
+            echo "::error::version must look like x.y.z or x.y.z-tag (got: ${{ inputs.version }})"
+            exit 1
+          }
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Set package version
+        id: bump
+        run: |
+          npm pkg set version="${{ inputs.version }}"
+          echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          echo "Released version: ${{ inputs.version }}"
+
+      - name: Determine npm dist-tag
+        id: tag
+        run: |
+          if echo "${{ steps.bump.outputs.version }}" | grep -q '-'; then
+            echo "dist=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "dist=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore(release): ${{ steps.bump.outputs.tag }}"
+          git tag "${{ steps.bump.outputs.tag }}"
+          git push origin HEAD:${{ github.ref_name }} --follow-tags
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public --tag ${{ steps.tag.outputs.dist }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          name: ${{ steps.bump.outputs.tag }}
+          generate_release_notes: true
+          prerelease: ${{ steps.tag.outputs.dist == 'next' }}
