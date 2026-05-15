@@ -46,6 +46,7 @@
     "format:check": "prettier --check ."
   },
   "keywords": [
+    "indentier",
     "formatter",
     "indent",
     "indentation",

@@ -11,6 +11,8 @@
 | sample.js | JavaScript |
 | sample.ts | TypeScript |
 | sample.json | JSON |
+| sample.jsonc | JSONC (JSON with Comments) |
+| sample.json5 | JSON5 |
 
 ## 使い方
 

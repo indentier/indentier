@@ -1,0 +1,11 @@
+// Project configuration
+{
+  "name": "demo",
+  "version": "1.0.0",
+  /* feature flags */
+  "features": {
+    "experimental": true,
+    "debug": false
+  },
+  "tags": ["one", "two", "three"]
+}

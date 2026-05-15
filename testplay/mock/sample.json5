@@ -1,0 +1,11 @@
+// JSON5 supports comments, trailing commas, and unquoted keys
+{
+  name: 'demo',
+  version: '1.0.0',
+  // build settings
+  build: {
+    outDir: 'dist',
+    minify: true,
+  },
+  tags: ['one', 'two', 'three'],
+}
