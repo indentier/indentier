@@ -72,19 +72,18 @@ describe('format / default mode', () => {
     expect(lines[1]).toMatch(/sayHello\(2\) +;$/);
   });
 
-  it('glues leading semicolons back to body when a closing brace follows', () => {
+  it('moves semicolons to the right margin even when a closing brace follows', () => {
     const input = '  console.log("x");\n}\n';
     const out = format(input, resolveOptions({ minColumn: 30, offset: 4 }));
     const first = out.split('\n')[0]!;
-    expect(first.startsWith('  console.log("x");')).toBe(true);
-    expect(first.trimEnd().endsWith('}')).toBe(true);
+    expect(first).toMatch(/console\.log\("x"\) +;}$/);
   });
 
   it('merges leading closing brace with previous content line', () => {
     const input = 'function f() {\n  if (a) {\n    foo();\n  } else {\n    bar();\n  }\n}\n';
     const out = format(input, resolveOptions({ minColumn: 60, offset: 4 }));
     const lines = out.split('\n').filter((l) => l.length > 0);
-    expect(lines[2]!).toMatch(/foo\(\); +}$/);
+    expect(lines[2]!).toMatch(/foo\(\) +;}$/);
     expect(lines[3]!).toMatch(/^\s+else +{$/);
   });
 

@@ -217,22 +217,11 @@ function renderIndent(spaces: number, opts: ResolvedOptions): string {
   return '\t'.repeat(Math.floor(spaces / opts.tabWidth)) + ' '.repeat(spaces % opts.tabWidth);
 }
 
-function splitGlue(trailing: string): { glue: string; floating: string } {
-  if (!trailing) return { glue: '', floating: '' };
-  const brace = trailing.search(/[{}]/);
-  if (brace <= 0) return { glue: '', floating: trailing };
-  const head = trailing.slice(0, brace);
-  return /^[;,]+$/.test(head)
-    ? { glue: head, floating: trailing.slice(brace) }
-    : { glue: '', floating: trailing };
-}
-
 function targetColumn(lines: RenderLine[], opts: ResolvedOptions): number {
   let maxLen = 0;
   for (const line of lines) {
     if (!line.body) continue;
-    const { glue } = splitGlue(line.trailing);
-    const w = renderIndent(line.indent, opts).length + line.body.length + glue.length;
+    const w = renderIndent(line.indent, opts).length + line.body.length;
     if (w > maxLen) maxLen = w;
   }
   return Math.max(maxLen + opts.offset, opts.minColumn);
@@ -244,10 +233,9 @@ function renderLine(line: RenderLine, col: number, opts: ResolvedOptions): strin
   if (!line.body) {
     return ' '.repeat(Math.max(col - indent.length, 0)) + line.trailing;
   }
-  const { glue, floating } = splitGlue(line.trailing);
-  const head = indent + line.body + glue;
-  if (!floating) return head;
-  return head + ' '.repeat(Math.max(col - head.length, 1)) + floating;
+  const head = indent + line.body;
+  if (!line.trailing) return head;
+  return head + ' '.repeat(Math.max(col - head.length, 1)) + line.trailing;
 }
 
 // --- main entry ---

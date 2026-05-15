@@ -35,25 +35,26 @@ function sayHello(content) {
 <!-- prettier-ignore -->
 ```js
 // default mode
-function sayHello(content)                          {
-  if (!content)                                     {
-    console.log("...");                             }
-  else if (typeof content !== "string")             {
-    console.log(":rage:");                          }
-  else                                              {
-    console.log(content);                           }}
+function sayHello(content)                                                      {
+  if (!content)                                                                 {
+    console.log("...")                                                          ;}
+  else if (typeof content !== "string")                                         {
+    console.log(":rage:")                                                       ;}
+  else                                                                          {
+    console.log(content)                                                        ;}}
 ```
 
 <!-- prettier-ignore -->
 ```js
 // ruby mode
-function sayHello(content)                          { let end=null;
-  if (!content)                                     {
-    console.log("...");                             }
-  else if (typeof content !== "string")             {
-    console.log(":rage:");                          }
-  else                                              {
-    console.log(content);                           }}
+                                                                                let end=null;
+function sayHello(content)                                                      {
+  if (!content)                                                                 {
+    console.log("...")                                                          ;}
+  else if (typeof content !== "string")                                         {
+    console.log(":rage:")                                                       ;}
+  else                                                                          {
+    console.log(content)                                                        ;}}
   end
 end
 ```
@@ -142,7 +143,7 @@ Indentier is `cosmiconfig`-powered and auto-discovers:
 
 ## Plugins
 
-The core package handles **JavaScript and TypeScript** natively. For other languages, install a plugin:
+The core package handles **JavaScript, TypeScript, and the JSON family** (`.json`, `.jsonc`, `.json5`) natively. For other languages, install a plugin:
 
 ```sh
 npm i -D @indentier/plugin-rust @indentier/plugin-go
@@ -181,7 +182,31 @@ const output = format(source, options, '.rs', plugin)
 
 ## Supported languages
 
-JS/TS is built in. For other languages see **[indentier.github.io/plugins](https://indentier.github.io/plugins/)** for the full list and plugin packages.
+JS/TS and the JSON family (`.json`, `.jsonc`, `.json5`) are built in. For other languages see **[indentier.github.io/plugins](https://indentier.github.io/plugins/)** for the full list and plugin packages.
+
+<!-- prettier-ignore -->
+```json
+{
+  "name": "demo",
+  "version": "1.0.0",
+  "tags": ["one", "two", "three"],
+  "nested": {
+    "a": 1,
+    "b": 2
+  }
+}
+```
+
+<!-- prettier-ignore -->
+```json
+                                                                                {
+  "name": "demo"                                                                ,
+  "version": "1.0.0"                                                            ,
+  "tags": ["one", "two", "three"]                                               ,
+  "nested":                                                                     {
+    "a": 1                                                                      ,
+    "b": 2                                                                      }}
+```
 
 Parsing is heuristic and regex-based — Indentier deliberately avoids ASTs to stay fast and language-agnostic.
 
