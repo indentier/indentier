@@ -143,24 +143,45 @@ function injectRubyEnds(
       else if (c === '}') stack.pop();
     }
 
-    const closes = countChar(line.trailing, '}');
-    const opens = countChar(line.trailing, '{');
+    const trailing = line.trailing;
+    const closes = countChar(trailing, '}');
+    const blockOpener = isBlockOpener(line.body);
 
     const next = findNextContent(lines, i + 1);
     const isContinuation =
       smartEnd && !!next && (CONTINUATION_RE.test(next.body) || CLOSING_PAREN_RE.test(next.body));
-    // Idempotency: existing `end` lines in input should not be duplicated.
-    const nextIsEnd = !!next && next.body === endBody && !next.trailing;
+    // Idempotency: an already-injected `end` line that follows must not be
+    // duplicated. It may now carry relocated closing braces in its trailing,
+    // so match on the body alone rather than requiring an empty trailing.
+    const nextIsEnd = !!next && next.body === endBody;
 
-    for (let c = 0; c < closes; c++) {
-      const frame = stack.pop() ?? { indent: line.indent, isBlock: false };
-      if (!frame.isBlock) continue;
-      if (smartEnd && c === closes - 1 && isContinuation) continue;
-      if (nextIsEnd) continue;
-      out.push({ indent: frame.indent, body: endBody, trailing: '' });
-    }
-    for (let o = 0; o < opens; o++) {
-      stack.push({ indent: line.indent, isBlock: isBlockOpener(line.body) });
+    // Walk the trailing symbols in source order, relocating closing braces so
+    // that each injected `end` lands *inside* the block it closes. When several
+    // closes pile onto one line (e.g. `;}}` from `  }` + `});`), emitting every
+    // `end` after the whole trailing would push the inner `end` past the outer
+    // `}` — outside its block, which is a syntax error after `=> {…})`. Instead
+    // the brace that closes a block stays put, its `end` follows, and any later
+    // brace rides along on that `end` line so the nesting stays valid.
+    line.trailing = '';
+    let sink: RenderLine = line;
+    let closeIdx = 0;
+    for (const ch of trailing) {
+      if (ch === '}') {
+        sink.trailing += ch;
+        const frame = stack.pop() ?? { indent: line.indent, isBlock: false };
+        const lastClose = closeIdx === closes - 1;
+        closeIdx++;
+        const skip = (smartEnd && lastClose && isContinuation) || nextIsEnd;
+        if (frame.isBlock && !skip) {
+          sink = { indent: frame.indent, body: endBody, trailing: '' };
+          out.push(sink);
+        }
+      } else {
+        // Openers and separators stay on the originating content line; only a
+        // closing brace may migrate onto a following `end`.
+        line.trailing += ch;
+        if (ch === '{') stack.push({ indent: line.indent, isBlock: blockOpener });
+      }
     }
   }
 

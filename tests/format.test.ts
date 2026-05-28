@@ -171,8 +171,37 @@ describe('format / ruby mode', () => {
   it('does not emit end between if/else (smartEnd)', () => {
     const input = 'function f() {\n  if (a) {\n    x();\n  } else {\n    y();\n  }\n}\n';
     const out = format(input, resolveOptions({ mode: 'ruby', minColumn: 80, offset: 8 }));
-    const endLines = out.split('\n').filter((l) => l.trim() === 'end');
+    // An `end` line may carry a relocated closing brace in its right margin, so
+    // match the `end` token rather than requiring a bare line.
+    const endLines = out.split('\n').filter((l) => /^\s*end\s*\}*$/.test(l));
     expect(endLines.length).toBe(2);
+  });
+
+  it('keeps end inside the block when nested closes stack on one line', () => {
+    // `}` (if) + `});` (arrow call) merge onto the puts line as `;}}`. The if's
+    // `end` must land inside the arrow body, before the arrow's `}` — otherwise
+    // it falls into the call's argument list: `each((n) => {…} end )` (a syntax
+    // error). The arrow itself takes no `end` (continuation toward `)`).
+    const input =
+      'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
+    const out = format(input, resolveOptions({ mode: 'ruby', minColumn: 60, offset: 4 }));
+    const lines = out.split('\n');
+    const ifEndIdx = lines.findIndex((l) => /^\s*end\s*\}$/.test(l));
+    const parenIdx = lines.findIndex((l) => /^\)/.test(l));
+    expect(ifEndIdx).toBeGreaterThanOrEqual(0);
+    // The relocated arrow brace rides on the if's `end`, which precedes the `)`.
+    expect(ifEndIdx).toBeLessThan(parenIdx);
+    // Exactly one `end` (the if's); the arrow is a continuation, so no end there.
+    expect(out.split('\n').filter((l) => /^\s*end\s*\}*$/.test(l))).toHaveLength(1);
+  });
+
+  it('idempotency (ruby mode): formatting twice gives the same result', () => {
+    const input =
+      'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
+    const opts = resolveOptions({ mode: 'ruby', minColumn: 60, offset: 4 });
+    const once = format(input, opts);
+    const twice = format(once, opts);
+    expect(twice).toBe(once);
   });
 
   it('uses a custom variableName', () => {
