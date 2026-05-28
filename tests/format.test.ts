@@ -182,8 +182,7 @@ describe('format / ruby mode', () => {
     // `end` must land inside the arrow body, before the arrow's `}` — otherwise
     // it falls into the call's argument list: `each((n) => {…} end )` (a syntax
     // error). The arrow itself takes no `end` (continuation toward `)`).
-    const input =
-      'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
+    const input = 'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
     const out = format(input, resolveOptions({ mode: 'ruby', minColumn: 60, offset: 4 }));
     const lines = out.split('\n');
     const ifEndIdx = lines.findIndex((l) => /^\s*end\s*\}$/.test(l));
@@ -196,8 +195,7 @@ describe('format / ruby mode', () => {
   });
 
   it('idempotency (ruby mode): formatting twice gives the same result', () => {
-    const input =
-      'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
+    const input = 'list.each((n) => {\n  if (cond(n)) {\n    use(n);\n  }\n});\n';
     const opts = resolveOptions({ mode: 'ruby', minColumn: 60, offset: 4 });
     const once = format(input, opts);
     const twice = format(once, opts);
