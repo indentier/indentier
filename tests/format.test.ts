@@ -447,6 +447,32 @@ describe('format / ruby mode — indentation-based (offside rule)', () => {
     expect(out).toContain('end = null');
   });
 
+  it('renders the declaration at column 0, not right-aligned', () => {
+    // Indentation-based languages treat leading whitespace as syntax, so the
+    // injected declaration must be a real body line at column 0 — a right-
+    // aligned trailing line would be "unexpected indentation" in CoffeeScript.
+    const input = 'f = ->\n  use()\n';
+    const out = format(input, opts(), '.coffee', coffeePlugin);
+    const declLine = out.split('\n').find((l) => l.trim() === 'end = null');
+    expect(declLine).toBe('end = null');
+  });
+
+  it('emits blank lines after a freshly-injected declaration, idempotently', () => {
+    const topDeclPlugin: IndentierPlugin = {
+      ...coffeePlugin,
+      declarationInsertIndex: () => 0,
+      declarationBlankLinesAfter: 3,
+    };
+    const input = "import { readFile } from 'fs'\nf = ->\n  use()\n";
+    const out = format(input, opts(), '.coffee', topDeclPlugin);
+    const lines = out.split('\n');
+    expect(lines[0]).toBe('end = null');
+    expect(lines.slice(1, 4)).toEqual(['', '', '']);
+    expect(lines[4]!.trim()).toBe("import { readFile } from 'fs'");
+    // Re-formatting must not stack a second declaration or extra blanks.
+    expect(format(out, opts(), '.coffee', topDeclPlugin)).toBe(out);
+  });
+
   it('idempotency: formatting twice gives the same result', () => {
     const input =
       "import { readFile } from 'fs'\n\n" +

@@ -308,16 +308,29 @@ function injectRubyDeclaration(
   const tpl = resolveDeclarationTemplate(opts, ext, plugin);
   if (tpl === null) return lines;
 
+  // Indentation-based languages (e.g. CoffeeScript) treat leading whitespace as
+  // syntax, so the declaration must sit at column 0 as a real body line. Brace
+  // languages keep it as a right-aligned, body-less trailing line.
+  const declLine: RenderLine = plugin?.indentationBased
+    ? { indent: 0, body: tpl, trailing: '' }
+    : { indent: 0, body: '', trailing: tpl };
+
   // Idempotency: if any existing line already reconstructs to the template,
-  // re-normalise it to a body-less trailing line for stable rendering.
+  // re-normalise it for stable rendering.
   const existingIdx = lines.findIndex((l) => `${l.body}${l.trailing}` === tpl);
   if (existingIdx >= 0) {
-    lines[existingIdx] = { indent: 0, body: '', trailing: tpl };
+    lines[existingIdx] = declLine;
     return lines;
   }
 
   const idx = plugin?.declarationInsertIndex?.(lines) ?? 0;
-  lines.splice(idx, 0, { indent: 0, body: '', trailing: tpl });
+  const blanksAfter = Math.max(0, plugin?.declarationBlankLinesAfter ?? 0);
+  const blanks: RenderLine[] = Array.from({ length: blanksAfter }, () => ({
+    indent: 0,
+    body: '',
+    trailing: '',
+  }));
+  lines.splice(idx, 0, declLine, ...blanks);
   return lines;
 }
 

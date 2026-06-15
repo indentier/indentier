@@ -57,6 +57,13 @@ export interface IndentierPlugin {
    * @param lines Read-only view of lines after `injectRubyEnds`.
    */
   declarationInsertIndex?: (lines: readonly PluginLine[]) => number;
+  /**
+   * Number of blank lines to emit directly after a freshly-injected
+   * declaration line. Only applies when the declaration is newly inserted;
+   * an already-present declaration is left untouched so formatting stays
+   * idempotent. Defaults to `0`.
+   */
+  declarationBlankLinesAfter?: number;
 }
 
 export interface RubyOptions {
