@@ -193,6 +193,96 @@ function injectRubyEnds(
   return out;
 }
 
+/**
+ * Indentation-based `end` injection (offside rule) for brace-less languages
+ * such as CoffeeScript.
+ *
+ * A block is detected purely from indentation: a content line opens a block when
+ * the next content line is more deeply indented. The block closes at the first
+ * later content line whose indent is shallower-or-equal, and an `end` is emitted
+ * at the opener's indent just before that line. Bracket/array literals (whose
+ * line ends with an exiled `{`/`[`) are skipped — they are closed by a brace,
+ * not by a dedent.
+ *
+ * Idempotency: an already-injected `end` line closes its block without emitting a
+ * second one, and continuation keywords (`else`/`catch`/…) at the block's own
+ * indent re-open rather than terminate it — mirroring brace-mode `smartEnd`.
+ */
+function injectIndentationEnds(
+  lines: RenderLine[],
+  opts: ResolvedOptions,
+  plugin: IndentierPlugin | undefined,
+  declTemplate: string | null,
+): RenderLine[] {
+  const { variableName, smartEnd } = opts.ruby;
+  const endBody = plugin?.getEndStatement?.(variableName) ?? variableName;
+  const out: RenderLine[] = [];
+  const stack: number[] = []; // indents of open block openers
+
+  // An already-injected declaration is rendered body-less in the right margin,
+  // but on a second pass it re-parses as a content line at a huge (column)
+  // indent. Excluding it keeps the offside rule from mistaking the preceding
+  // line for a block opener — see the idempotency note above.
+  const isDeclaration = (line: RenderLine): boolean =>
+    declTemplate !== null && line.body + line.trailing === declTemplate;
+
+  const nextContentIndent = (from: number): number | null => {
+    for (let j = from; j < lines.length; j++) {
+      const l = lines[j]!;
+      if (l.body.length > 0 && !isDeclaration(l)) return l.indent;
+    }
+    return null;
+  };
+
+  // Insert the emitted `end` lines directly after the block body, *above* any
+  // trailing blank lines already in `out`. Appending them as-is would leave a
+  // blank between the code and its `end` (e.g. a blank before the next
+  // statement), which reads unnaturally.
+  const insertEnds = (ends: RenderLine[]): void => {
+    if (ends.length === 0) return;
+    let at = out.length;
+    while (at > 0 && !out[at - 1]!.body && !out[at - 1]!.trailing) at--;
+    out.splice(at, 0, ...ends);
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (!line.body || isDeclaration(line)) {
+      out.push(line);
+      continue;
+    }
+
+    const cur = line.indent;
+    const isEndLine = line.body === endBody;
+    const isContinuation = smartEnd && CONTINUATION_RE.test(line.body);
+
+    const ends: RenderLine[] = [];
+    while (stack.length > 0 && cur <= stack[stack.length - 1]!) {
+      const opener = stack.pop()!;
+      // Skip the `end` when this line is itself an already-injected `end`
+      // (idempotency) or continues the same block at its own indent.
+      const skip = isEndLine || (isContinuation && cur === opener);
+      if (!skip) ends.push({ indent: opener, body: endBody, trailing: '' });
+    }
+    insertEnds(ends);
+
+    out.push(line);
+
+    // A trailing `{`/`[` means the deeper lines belong to a bracket literal,
+    // which closes with a brace rather than a dedent — never an `end` block.
+    const opensBracketLiteral = /[{[]/.test(line.trailing);
+    const next = nextContentIndent(i + 1);
+    if (!opensBracketLiteral && next !== null && next > cur) stack.push(cur);
+  }
+
+  const tail: RenderLine[] = [];
+  while (stack.length > 0) {
+    tail.push({ indent: stack.pop()!, body: endBody, trailing: '' });
+  }
+  insertEnds(tail);
+  return out;
+}
+
 function resolveDeclarationTemplate(
   opts: ResolvedOptions,
   ext: string,
@@ -273,7 +363,10 @@ export function format(
   const rubyEnabled =
     opts.mode === 'ruby' && (plugin ? (plugin.rubyCompatible ?? true) : isRubyCompatible(ext));
   if (rubyEnabled) {
-    lines = injectRubyDeclaration(injectRubyEnds(lines, opts, plugin), opts, ext, plugin);
+    const ends = plugin?.indentationBased
+      ? injectIndentationEnds(lines, opts, plugin, resolveDeclarationTemplate(opts, ext, plugin))
+      : injectRubyEnds(lines, opts, plugin);
+    lines = injectRubyDeclaration(ends, opts, ext, plugin);
   }
 
   const col = targetColumn(lines, opts);

@@ -33,6 +33,13 @@ export interface IndentierPlugin {
    */
   rubyCompatible?: boolean;
   /**
+   * Whether blocks in this language are delimited by indentation rather than
+   * braces (e.g. CoffeeScript, Python). When `true`, ruby mode injects `end`
+   * keywords by detecting dedents (the offside rule) instead of tracking `{`/`}`.
+   * Defaults to `false`.
+   */
+  indentationBased?: boolean;
+  /**
    * Default declaration template.
    * Use the literal string `'end'` as a placeholder for the variable name.
    * `null` = skip declaration entirely.
